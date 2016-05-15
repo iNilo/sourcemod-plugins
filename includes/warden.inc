@@ -5,6 +5,7 @@
 
 // Forwards
 forward void OnNewWarden(int warden);
+forward void OnWardenDisappeared();
 forward Action OnTryingToBecomeWarden(int client);
 
 // Natives

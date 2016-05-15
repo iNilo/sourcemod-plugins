@@ -21,6 +21,7 @@ ConVar g_hWardenPickTime = null;
 
 // Forwards
 Handle g_hOnWardenClaimed = null;
+Handle g_hOnWardenDisappeared = null;
 Handle g_hOnTryingToBecomeWarden = null;
 
 public void OnPluginStart()
@@ -37,6 +38,7 @@ public void OnPluginStart()
 void RegisterForwards()
 {
 	g_hOnWardenClaimed = CreateGlobalForward("OnWardenClaimed", ET_Ignore, Param_Cell);
+	g_hOnWardenDisappeared = CreateGlobalForward("OnWardenDisappeared", ET_Ignore);
 	g_hOnTryingToBecomeWarden = CreateGlobalForward("OnTryingToBecomeWarden", ET_Event, Param_Cell);
 }
 
@@ -62,6 +64,10 @@ void RemoveWarden()
 {
     g_iWarden = -1;
     // Play sound
+    
+    // Let other plugins know the warden is gone
+    Call_StartForward(g_hOnWardenDisappeared);
+    Call_Finish();
 }
 
 public Action OnClientCommandKeyValues(int client, KeyValues kv) 
