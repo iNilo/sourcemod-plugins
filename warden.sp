@@ -69,7 +69,7 @@ void RegisterConsoleCmds()
     RegConsoleCmd("sm_unwarden", Command_Unwarden);
     
     RegAdminCmd("sm_rw", Command_RemoveWarden, ADMFLAG_SLAY);
-    RegAdminCmd("sm_removewarden", Command_RemoveWarden", ADMFLAG_SLAY);
+    RegAdminCmd("sm_removewarden", Command_RemoveWarden, ADMFLAG_SLAY);
     
     RegConsoleCmd("mark", Command_ShowMarker);
 }
@@ -126,7 +126,15 @@ public Action Event_LeavingActiveTeam(int client, int args)
     if (IsWarden(client))
     {
         RemoveWarden();
+        return Plugin_Continue;
     }
+    
+  	int iUserId = GetCLientUserId(client);
+  	int iQueuePos = g_aWardenQueue.FindValue(iUserId);
+	if (iQueuePos != -1)
+	{
+		g_aWardenQueue.Erase(iQueuePos);
+	}
     
     return Plugin_Continue;
 }
