@@ -40,3 +40,18 @@ stock bool IsValidClient(int client)
 	
 	return false;
 }
+
+stock int GetTeamAliveClientCount(int team)
+{
+	int count;
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && GetClientTeam(i) == team)
+		{
+			count++;
+		}
+	}
+	
+	return count;
+}

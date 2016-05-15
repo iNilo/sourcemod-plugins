@@ -3,13 +3,19 @@
 #endif
 #define _warden_included
 
+// Forwards
+forward void OnNewWarden(int warden);
+forward Action OnTryingToBecomeWarden(int client);
+
+// Natives
+
 /*********************************************************
  * Checks if any warden exist
  *
  * @true on match , false if not
  *********************************************************/
-native warden_exist();
-native twarden_exist();
+native bool warden_exist();
+native bool twarden_exist();
 
 /*********************************************************
  * returns if client is warden
@@ -17,8 +23,8 @@ native twarden_exist();
  * @param client		The client to run the check on
  * @true on match, false if not		
  *********************************************************/
-native warden_iswarden(client);
-native twarden_iswarden(client);
+native bool warden_iswarden(client);
+native bool twarden_iswarden(client);
 
 /*********************************************************
  * Set a client as warden
@@ -26,8 +32,8 @@ native twarden_iswarden(client);
  * @param client		The client to set as warden
  * @NoReturn
  *********************************************************/
-native warden_set(client);
-native twarden_set(client);
+native void warden_set(client);
+native void twarden_set(client);
 
 /*********************************************************
  * Removes the current warden if he exists
@@ -35,5 +41,5 @@ native twarden_set(client);
  * @param client		The warden client to remove
  * @NoReturn	
  *********************************************************/
-native warden_remove(client);
-native twarden_remove(client);
+native void warden_remove(client);
+native void twarden_remove(client);
