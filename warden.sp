@@ -1,5 +1,6 @@
 #include <sourcemod>
-#include <emitsoundany>
+#include <cstrike>
+//#include <emitsoundany>
 #include <cnf_core>
 #include <warden>
 
@@ -15,6 +16,9 @@ ArrayList g_aPreviousWarden = null;
 
 Timer g_hPickWardenTimer = null;
 
+// ConVars
+ConVar g_hWardenPickTime = null;
+
 public void OnPluginStart()
 {
 	g_aWardenQueue = new ArrayList();
@@ -27,10 +31,10 @@ public void OnPluginStart()
     // OnWardenClaimed forward
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
-	PrecacheSoundAny
-	AddFileToDownloadstable
+	//PrecacheSoundAny
+	//AddFileToDownloadstable
 }
 
 void SetWarden(int client)
@@ -58,6 +62,17 @@ public Action OnClientCommandKeyValues(int client, KeyValues kv)
     } 
      
     return Plugin_Continue; 
+}
+
+void SetClanTag(int client)
+{
+	char tag[32];
+	if (IsWarden(client)) {
+		tag = "[Warden]";
+	}
+	// When we add T Warden, we can also add that here
+	
+	CS_SetClientClanTag(client, tag);
 }
 
 /********************************* COMMANDS ***********************************/
@@ -94,7 +109,7 @@ public Action Command_ClaimWarden(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	int iUserId = GetCLientUserId(client);
+	int iUserId = GetClientUserId(client);
 	if (g_aWardenQueue.FindValue(iUserId) != -1)
 	{
 		ReplyToCommand("You and %d other guards are currently preparing to become warden.", g_aWardenQueue.Length - 1);
@@ -107,6 +122,29 @@ public Action Command_ClaimWarden(int client, int args)
 	return Plugin_Handled;
 }
 
+public Action Command_Unwarden(int client, int args)
+{
+	if (IsWarden(client)) {
+		RemoveWarden();
+	}
+	
+	return Plugin_Handled;
+}
+
+public Action Command_RemoveWarden(int client, int args)
+{
+	if (g_iWarden == -1)
+	{
+		ReplyToCommand(client, "We don't currently have a warden!");
+		return Plugin_Handled;
+	}
+	
+	RemoveWarden();
+	ShowActivity2(client, "[Warden]", "Removed the active warden");
+	
+	return Plugin_Handled;
+}
+
 bool IsWarden(client)
 {
     return g_iWarden == client;
@@ -115,21 +153,35 @@ bool IsWarden(client)
 /********************************** EVENTS *******************************/
 void HookEvents()
 {
-    HookEvent("player_team", Event_LeavingActiveTeam);
+    HookEvent("player_team", Event_LeavingActiveTeam);  // This also gets called when leaving the game
     HookEvent("player_death", Event_LeavingActiveTeam);
     HookEvent("round_start", Event_RoundStart);
     HookEvent("round_end", Event_RoundEnd);
 }
 
-public Action Event_LeavingActiveTeam(int client, int args)
+public Action Event_LeavingActiveTeam(Event event, const char[] name, bool dontBroadcast)
 {
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	
+	if (client == -1)
+	{
+		// We have no idea who this is, make sure this wasn't our warden!
+		if (g_iWarden != -1 && !IsClientInGame(g_iWarden))
+		{
+			RemoveWarden();
+			return Plugin_Continue;
+		}
+	}
+	
+	// If the player is currently warden, he should no longer be it
     if (IsWarden(client))
     {
         RemoveWarden();
         return Plugin_Continue;
     }
     
-  	int iUserId = GetCLientUserId(client);
+    // Remove the player from the warden queue if he is in it
+  	int iUserId = GetClientUserId(client);
   	int iQueuePos = g_aWardenQueue.FindValue(iUserId);
 	if (iQueuePos != -1)
 	{
@@ -139,9 +191,21 @@ public Action Event_LeavingActiveTeam(int client, int args)
     return Plugin_Continue;
 }
 
-public Action Event_RoundStart(int client, int args)
+public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-    g_hPickWardenTimer = CreateTimer(, Timer_PickWarden, TIMER_FLAGS_NO_MAPCHANGE);
+	g_iWarden = -1;
+	g_bRoundStartQueue = true;
+	
+    g_hPickWardenTimer = CreateTimer(g_hWardenPickTime.FloatValue, Timer_PickWarden, TIMER_FLAGS_NO_MAPCHANGE);
+    
+    for (int i = 1; i <= MaxClients; i++)
+    {
+    	if (IsClientInGame(i))
+		{
+			// Make sure everyone has their clan tag reset
+			SetClanTag(i);
+		}
+    }
 }
 
 
@@ -182,4 +246,10 @@ public int Native_GetWarden(Handle plugin, int args)
 public int Native_WardenExists(Handle plugin, int args)
 {
     return view_as<int>(g_iWarden != -1);
+}
+
+/******************************** CONVARS ********************************/
+void RegisterConvars()
+{
+	g_hWardenPickTime = CreateConVar("warden_picktime", "5.0", "Time (starting from round start) during which guards are able to become warden candidates", FCVAR_NONE, true, 0.0, false);
 }
